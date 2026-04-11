@@ -447,7 +447,7 @@ static int utf8SingleCharWidth(const char *s, size_t len) {
 }
 
 enum KEY_ACTION{
-	KEY_NULL = 0,	    /* NULL */
+	KEY_NULL = 0,       /* NULL */
 	CTRL_A = 1,         /* Ctrl+a */
 	CTRL_B = 2,         /* Ctrl-b */
 	CTRL_C = 3,         /* Ctrl-c */
@@ -736,11 +736,10 @@ static int completeLine(struct linenoiseState *ls, int keypressed) {
                 }
                 c = 0;
                 break;
-            case 27: /* escape */
-                /* Re-show original buffer */
+            case 27: /* escape or escape sequence */
+                /* Re-show original buffer, i.e. exit completion loop */
                 if (ls->completion_idx < lc.len) refreshLine(ls);
                 ls->in_completion = 0;
-                c = 0;
                 break;
             default:
                 /* Update buffer and return */
@@ -1319,7 +1318,7 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
      * count limits. */
     if (!isatty(l->ifd) && !getenv("LINENOISE_ASSUME_TTY")) return linenoiseNoTTY();
 
-    char c;
+    char c, pc;
     int nread;
     char seq[3];
 
@@ -1339,6 +1338,9 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
         if (retval == 0) return linenoiseEditMore;
         c = retval;
     }
+
+pending:
+    pc = 0;
 
     switch(c) {
     case ENTER:    /* enter */
@@ -1399,11 +1401,20 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
     case CTRL_N:    /* ctrl-n */
         linenoiseEditHistoryNext(l, LINENOISE_HISTORY_NEXT);
         break;
-    case ESC:    /* escape sequence */
+    case ESC:    /* escape or escape sequence */
         /* Read the next two bytes representing the escape sequence.
          * Use two calls to handle slow terminals returning the two
-         * chars at different times. */
+         * chars at different times.
+         * NOTE: if the completeLine has returned an ESC to be handled
+         * we cannot assume that we have to deal with an escape sequence,
+         * the user might have pressed the ESC just to leave the
+         * completion loop, in that case care must be taken to avoid
+         * consuming valid user input. */
         if (read(l->ifd,seq,1) == -1) break;
+        if (seq[0] != '[' && seq[0] == 'O') {
+            pc = seq[0];
+            break;
+        }
         if (read(l->ifd,seq+1,1) == -1) break;
 
         /* ESC [ sequences. */
@@ -1495,6 +1506,10 @@ char *linenoiseEditFeed(struct linenoiseState *l) {
     case CTRL_W: /* ctrl+w, delete previous word */
         linenoiseEditDeletePrevWord(l);
         break;
+    }
+    if (pc) {
+        c = pc;
+        goto pending;
     }
     return linenoiseEditMore;
 }
