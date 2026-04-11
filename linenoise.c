@@ -1411,7 +1411,7 @@ pending:
          * completion loop, in that case care must be taken to avoid
          * consuming valid user input. */
         if (read(l->ifd,seq,1) == -1) break;
-        if (seq[0] != '[' && seq[0] == 'O') {
+        if (seq[0] != '[' && seq[0] != 'O') {
             pc = seq[0];
             break;
         }
