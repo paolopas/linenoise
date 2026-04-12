@@ -1402,16 +1402,18 @@ pending:
         linenoiseEditHistoryNext(l, LINENOISE_HISTORY_NEXT);
         break;
     case ESC:    /* escape or escape sequence */
-        /* Read the next two bytes representing the escape sequence.
+        /* We cannot distinguish an ESC key press from  other keys
+         * presses that generate escape sequences.
+         * This could be the start of an escape sequence or the user
+         * might have pressed the ESC just to leave the completion loop,
+         * in the last case care must be taken to avoid consuming input.
+         * Read the next two bytes representing the escape sequence.
          * Use two calls to handle slow terminals returning the two
-         * chars at different times.
-         * NOTE: if the completeLine has returned an ESC to be handled
-         * we cannot assume that we have to deal with an escape sequence,
-         * the user might have pressed the ESC just to leave the
-         * completion loop, in that case care must be taken to avoid
-         * consuming valid user input. */
+         * chars at different times. */
         if (read(l->ifd,seq,1) == -1) break;
         if (seq[0] != '[' && seq[0] != 'O') {
+            /* Not a known sequence. Assume ESC was already used (e.g.
+             * by completeLine) and set the pending char to reparse. */
             pc = seq[0];
             break;
         }
