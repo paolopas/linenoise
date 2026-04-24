@@ -109,12 +109,10 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
 #include <stdint.h>
 #include "linenoise.h"
 
@@ -477,7 +475,7 @@ static int utf8SingleCharWidth(const char *s, size_t len) {
 }
 
 enum KEY_ACTION{
-	KEY_NULL = 0,	    /* NULL */
+	KEY_NULL = 0,       /* NULL */
 	CTRL_A = 1,         /* Ctrl+a */
 	CTRL_B = 2,         /* Ctrl-b */
 	CTRL_C = 3,         /* Ctrl-c */
@@ -740,7 +738,7 @@ static void refreshLineWithCompletion(struct linenoiseState *ls, linenoiseComple
  * If the function returns non-zero, the caller should handle the
  * returned value as a byte read from the standard input, and process
  * it as usually: this basically means that the function may return a byte
- * read from the termianl but not processed. Otherwise, if zero is returned,
+ * read from the terminal but not processed. Otherwise, if zero is returned,
  * the input was consumed by the completeLine() function to navigate the
  * possible completions, and the caller should read for the next characters
  * from stdin. */
